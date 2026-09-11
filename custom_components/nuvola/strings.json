@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nuvola Registro Elettronico",
+        "description": "Inserisci le credenziali utilizzate per accedere a Nuvola."
+      }
+    },
+    "error": {
+      "invalid_auth": "Autenticazione Nuvola rifiutata. Controlla le credenziali o il metodo di accesso richiesto dall'account.",
+      "unknown": "Errore imprevisto durante la configurazione."
+    }
+  }
+}

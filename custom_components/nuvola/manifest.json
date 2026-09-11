@@ -1,0 +1,13 @@
+{
+  "domain": "nuvola",
+  "name": "Nuvola Registro Elettronico",
+  "version": "0.6.4",
+  "documentation": "https://github.com/damjj/ha-nuvola",
+  "issue_tracker": "https://github.com/damjj/ha-nuvola/issues",
+  "codeowners": [
+    "@damjj"
+  ],
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "requirements": []
+}
