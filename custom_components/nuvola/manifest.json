@@ -1,7 +1,7 @@
 {
   "domain": "nuvola",
   "name": "Nuvola Registro Elettronico",
-  "version": "0.7.5",
+  "version": "0.8.0",
   "documentation": "https://github.com/damjj/ha-nuvola",
   "issue_tracker": "https://github.com/damjj/ha-nuvola/issues",
   "codeowners": [

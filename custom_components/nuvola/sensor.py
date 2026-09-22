@@ -20,6 +20,7 @@ async def async_setup_entry(
         NuvolaAbsencesSensor(coordinator, entry),
         NuvolaHomeworkSensor(coordinator, entry),
         NuvolaNotesSensor(coordinator, entry),
+        NuvolaBulletinSensor(coordinator, entry),
     ])
 
 
@@ -89,3 +90,67 @@ class NuvolaNotesSensor(BaseNuvolaSensor, SensorEntity):
         if isinstance(data, dict):
             return sum(len(v) for v in data.values() if isinstance(v, list))
         return len(data) if isinstance(data, list) else 0
+
+
+class NuvolaBulletinSensor(BaseNuvolaSensor, SensorEntity):
+    """Monitor documents published in Nuvola bulletin boards."""
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry, "bulletin", "Bacheca")
+
+    @property
+    def native_value(self):
+        documents = self.coordinator.data.get("bulletin_documents", [])
+        return len(documents) if isinstance(documents, list) else 0
+
+    @property
+    def extra_state_attributes(self):
+        documents = self.coordinator.data.get("bulletin_documents", [])
+        if not isinstance(documents, list):
+            documents = []
+
+        def sort_key(item):
+            return str(item.get("dataPubblicazione") or "")
+
+        ordered = sorted(documents, key=sort_key, reverse=True)
+        latest = ordered[0] if ordered else {}
+
+        unread = [
+            item for item in documents
+            if item.get("isRead") is False
+            or item.get("documentoBachecaLetto") is False
+            or (isinstance(item.get("metadata"), dict) and item["metadata"].get("isRead") is False)
+        ]
+
+        attachments = []
+        for attachment in latest.get("allegati") or []:
+            if not isinstance(attachment, dict):
+                continue
+            attachment_id = attachment.get("id")
+            item = {
+                "id": attachment_id,
+                "nome": attachment.get("nome"),
+                "mime_type": attachment.get("mimeType"),
+            }
+            if attachment_id:
+                student = self.coordinator.data.get("student") or {}
+                student_id = student.get("id") or student.get("id_alunno")
+                if student_id is not None:
+                    item["preview_url"] = (
+                        f"https://nuvola.madisoft.it/api-studente/v1/alunno/{student_id}/"
+                        f"file-preview/{attachment_id}?contextAlunno={student_id}"
+                    )
+            attachments.append(item)
+
+        attrs = {
+            "non_lette": len(unread),
+            "ultimo_id": latest.get("id"),
+            "ultima_pubblicazione": latest.get("dataPubblicazione"),
+            "ultima_archiviazione": latest.get("dataArchiviazione"),
+            "ultimo_oggetto": latest.get("oggetto"),
+            "ultimo_letto": latest.get("isRead", latest.get("documentoBachecaLetto")),
+            "ultima_richiesta_adesione": latest.get("adesioneRichiesta"),
+            "ultima_scadenza_adesione": latest.get("dataScadenzaAdesione"),
+            "ultimi_allegati": attachments,
+        }
+        return attrs

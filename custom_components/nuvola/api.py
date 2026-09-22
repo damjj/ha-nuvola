@@ -521,6 +521,29 @@ class NuvolaAPI:
 
         raise NuvolaAuthError(f"Token Nuvola rifiutato da {path} dopo il rinnovo automatico")
 
+    async def bulletin_documents(self, student_id):
+        """Return the documents visible in the student's Nuvola bulletin boards."""
+        data = await self._json(
+            "/api-studente/v1/documenti",
+            params={"contextAlunno": student_id},
+        )
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            for key in ("data", "documenti", "documents", "items"):
+                value = data.get(key)
+                if isinstance(value, list):
+                    return value
+        return []
+
+    @staticmethod
+    def attachment_preview_url(student_id, attachment_id):
+        """Build the Nuvola preview endpoint for a bulletin-board attachment."""
+        return (
+            f"{BASE_URL}/api-studente/v1/alunno/{student_id}/file-preview/"
+            f"{attachment_id}?contextAlunno={student_id}"
+        )
+
     async def students(self):
         data = await self._json("/api-studente/v1/alunni")
         if isinstance(data, list):
@@ -617,6 +640,12 @@ class NuvolaAPI:
             result["homework"] = await self.homework(sid)
         except Exception as err:
             _LOGGER.debug("Nuvola homework unavailable: %s", err)
+
+        try:
+            result["bulletin_documents"] = await self.bulletin_documents(sid)
+        except Exception as err:
+            _LOGGER.debug("Nuvola bulletin documents unavailable: %s", err)
+            result["bulletin_documents"] = []
 
         return result
 

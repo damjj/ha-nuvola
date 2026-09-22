@@ -2,7 +2,7 @@
 
 Custom integration for Nuvola Registro Elettronico (Madisoft).
 
-## Version 0.5.0
+## Version 0.8.0
 
 Complete package containing:
 
@@ -17,7 +17,9 @@ Complete package containing:
 - Notes
 - Homework
 - Coordinator-based polling
-- Sensors for student/grade/absence/homework/note counts
+- Nuvola bulletin-board monitoring
+- Latest bulletin entry, read status and attachment metadata
+- Sensors for student/grade/absence/homework/note/bulletin counts
 - Italian and English translations
 - HACS metadata
 
@@ -33,7 +35,7 @@ SPID/CIE/MFA/CAPTCHA or another fully interactive identity-provider flow cannot 
 
 ### Installation
 
-Remove the old `/config/custom_components/nuvola` directory completely, copy the `custom_components/nuvola` directory from this ZIP into `/config/custom_components/`, restart Home Assistant, and add **Nuvola Registro Elettronico** from Settings → Devices & services.
+Copy the `custom_components/nuvola` directory from this ZIP into `/config/custom_components/`, replacing the files of the previous version, then restart Home Assistant.
 
 ### Debug
 
