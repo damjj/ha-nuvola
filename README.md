@@ -33,8 +33,8 @@ Le API ufficiali Madisoft richiedono un token di accesso nell'header della richi
 Progetto non ufficiale e non affiliato a Madisoft S.r.l.
 
 
-## Versione 0.8.1 diagnostica
+## Versione 0.8.2 correttiva + diagnostica
 
-Questa versione è temporanea per diagnosticare il recupero dei dati. Scrive nel log a livello WARNING messaggi con prefisso `[0.8.1 DIAG]`, senza registrare password o token API.
+Questa versione è temporanea per diagnosticare il recupero dei dati. Scrive nel log a livello WARNING messaggi con prefisso `[0.8.2 DIAG]`, senza registrare password o token API.
 
-Dopo il riavvio di Home Assistant, cercare `0.8.1 DIAG` nei registri dell'integrazione `nuvola`.
+Dopo il riavvio di Home Assistant, cercare `0.8.2 DIAG` nei registri dell'integrazione `nuvola`.

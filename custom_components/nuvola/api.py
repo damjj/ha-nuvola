@@ -204,7 +204,7 @@ class NuvolaAPI:
             login_body = await self._text(r, 20000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.1 DIAG] Nuvola OIDC Keycloak login page: HTTP %s final_url=%s type=%s title=%s diagnostics=%s",
+                "[0.8.2 DIAG] Nuvola OIDC Keycloak login page: HTTP %s final_url=%s type=%s title=%s diagnostics=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -301,7 +301,7 @@ class NuvolaAPI:
             has_full_action = {"session_code", "execution", "client_id", "tab_id"}.issubset(set(action_query_keys))
 
             _LOGGER.warning(
-                "[0.8.1 DIAG] Nuvola OIDC Keycloak form: action=%s input_names=%s username_field=%s password_field_present=%s parser_form=%s candidates=%d page_has_session_code=%s",
+                "[0.8.2 DIAG] Nuvola OIDC Keycloak form: action=%s input_names=%s username_field=%s password_field_present=%s parser_form=%s candidates=%d page_has_session_code=%s",
                 self._safe_url(action_url),
                 input_names,
                 username_name,
@@ -311,7 +311,7 @@ class NuvolaAPI:
                 page_has_session_code if not form_action else False,
             )
             _LOGGER.warning(
-                "[0.8.1 DIAG] Nuvola OIDC Keycloak action query keys: %s full_session_action=%s",
+                "[0.8.2 DIAG] Nuvola OIDC Keycloak action query keys: %s full_session_action=%s",
                 action_query_keys,
                 has_full_action,
             )
@@ -336,7 +336,7 @@ class NuvolaAPI:
             post_body = await self._text(r, 8000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.1 DIAG] Nuvola OIDC credential submit: HTTP %s final_url=%s type=%s title=%s cookies=%s",
+                "[0.8.2 DIAG] Nuvola OIDC credential submit: HTTP %s final_url=%s type=%s title=%s cookies=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -375,7 +375,7 @@ class NuvolaAPI:
             area_body = await self._text(r, 6000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.1 DIAG] Nuvola OIDC /area-tutore: HTTP %s final_url=%s type=%s title=%s cookies=%s",
+                "[0.8.2 DIAG] Nuvola OIDC /area-tutore: HTTP %s final_url=%s type=%s title=%s cookies=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -399,7 +399,7 @@ class NuvolaAPI:
             body = await self._text(r, 8000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.1 DIAG] Nuvola OIDC login-from-web: HTTP %s final_url=%s type=%s title=%s",
+                "[0.8.2 DIAG] Nuvola OIDC login-from-web: HTTP %s final_url=%s type=%s title=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -479,7 +479,7 @@ class NuvolaAPI:
             ) as r:
                 body = await self._text(r, 12000)
                 _LOGGER.warning(
-                    "[0.8.1 DIAG] API request: path=%s attempt=%d HTTP=%s content_type=%s body_preview=%r",
+                    "[0.8.2 DIAG] API request: path=%s attempt=%d HTTP=%s content_type=%s body_preview=%r",
                     path, attempt + 1, r.status, r.headers.get("Content-Type"), body[:500],
                 )
 
@@ -502,7 +502,7 @@ class NuvolaAPI:
                         continue
 
                     _LOGGER.error(
-                        "[0.8.1 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
+                        "[0.8.2 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
                         path, r.status, body[:1500],
                     )
                     raise NuvolaAuthError(
@@ -511,7 +511,7 @@ class NuvolaAPI:
 
                 if r.status >= 400:
                     _LOGGER.error(
-                        "[0.8.1 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
+                        "[0.8.2 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
                         path, r.status, body[:1500],
                     )
                     raise NuvolaAuthError(f"API Nuvola {path} HTTP {r.status}")
@@ -524,7 +524,7 @@ class NuvolaAPI:
                         shape = f"dict(keys={sorted(str(k) for k in data.keys())[:30]})"
                     else:
                         shape = type(data).__name__
-                    _LOGGER.warning("[0.8.1 DIAG] API JSON parsed: path=%s shape=%s", path, shape)
+                    _LOGGER.warning("[0.8.2 DIAG] API JSON parsed: path=%s shape=%s", path, shape)
                     return data
                 except json.JSONDecodeError as err:
                     raise NuvolaAuthError(
@@ -556,15 +556,29 @@ class NuvolaAPI:
             f"{attachment_id}?contextAlunno={student_id}"
         )
 
-    async def students(self):
-        data = await self._json("/api-studente/v1/alunni")
+    @staticmethod
+    def _extract_list(data, keys):
+        """Extract a list from Nuvola API responses, including the standard 'valori' envelope."""
         if isinstance(data, list):
             return data
         if isinstance(data, dict):
-            for key in ("alunni", "students", "data"):
-                if isinstance(data.get(key), list):
-                    return data[key]
+            for key in keys:
+                value = data.get(key)
+                if isinstance(value, list):
+                    return value
         return []
+
+    async def students(self):
+        data = await self._json("/api-studente/v1/alunni")
+        values = self._extract_list(
+            data,
+            ("valori", "alunni", "students", "data", "items"),
+        )
+        _LOGGER.warning(
+            "[0.8.2 DIAG] students: extracted %d records from response",
+            len(values),
+        )
+        return values
 
     async def student(self):
         students = await self.students()
@@ -575,7 +589,15 @@ class NuvolaAPI:
         data = await self._json(
             f"/api-studente/v1/alunno/{student_id}/frazioni-temporali"
         )
-        return data.get("frazioni_temporali", data) if isinstance(data, dict) else data
+        values = self._extract_list(
+            data,
+            ("valori", "frazioni_temporali", "periodi", "data", "items"),
+        )
+        _LOGGER.warning(
+            "[0.8.2 DIAG] periods: extracted %d records",
+            len(values),
+        )
+        return values
 
     async def grades(self, student_id, period_id):
         return await self._json(
@@ -599,10 +621,10 @@ class NuvolaAPI:
         )
 
     async def fetch_all(self):
-        _LOGGER.warning("[0.8.1 DIAG] fetch_all: START")
+        _LOGGER.warning("[0.8.2 DIAG] fetch_all: START")
         students = await self.students()
         _LOGGER.warning(
-            "[0.8.1 DIAG] fetch_all: students result count=%d first_keys=%s",
+            "[0.8.2 DIAG] fetch_all: students result count=%d first_keys=%s",
             len(students) if isinstance(students, list) else -1,
             sorted(students[0].keys()) if students and isinstance(students[0], dict) else [],
         )
@@ -617,12 +639,12 @@ class NuvolaAPI:
         }
 
         if not students:
-            _LOGGER.error("[0.8.1 DIAG] fetch_all: ZERO STUDENTS -> all sensors will remain 0")
+            _LOGGER.error("[0.8.2 DIAG] fetch_all: ZERO STUDENTS -> all sensors will remain 0")
             return result
 
         sid = students[0].get("id") or students[0].get("id_alunno")
         if sid is None:
-            _LOGGER.error("[0.8.1 DIAG] fetch_all: student found but no id/id_alunno field -> all child API calls skipped")
+            _LOGGER.error("[0.8.2 DIAG] fetch_all: student found but no id/id_alunno field -> all child API calls skipped")
             return result
 
         result["student"] = students[0]
@@ -631,7 +653,7 @@ class NuvolaAPI:
             periods = await self.periods(sid)
             result["periods"] = periods if isinstance(periods, list) else []
         except Exception as err:
-            _LOGGER.warning("[0.8.1 DIAG] periods unavailable: %s", err)
+            _LOGGER.warning("[0.8.2 DIAG] periods unavailable: %s", err)
 
         if result["periods"]:
             first = result["periods"][-1]
@@ -644,31 +666,31 @@ class NuvolaAPI:
                 try:
                     result["grades"] = await self.grades(sid, pid)
                 except Exception as err:
-                    _LOGGER.warning("[0.8.1 DIAG] grades unavailable: %s", err)
+                    _LOGGER.warning("[0.8.2 DIAG] grades unavailable: %s", err)
 
         try:
             result["absences"] = await self.absences(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.1 DIAG] absences unavailable: %s", err)
+            _LOGGER.warning("[0.8.2 DIAG] absences unavailable: %s", err)
 
         try:
             result["notes"] = await self.notes(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.1 DIAG] notes unavailable: %s", err)
+            _LOGGER.warning("[0.8.2 DIAG] notes unavailable: %s", err)
 
         try:
             result["homework"] = await self.homework(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.1 DIAG] homework unavailable: %s", err)
+            _LOGGER.warning("[0.8.2 DIAG] homework unavailable: %s", err)
 
         try:
             result["bulletin_documents"] = await self.bulletin_documents(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.1 DIAG] bulletin documents unavailable: %s", err)
+            _LOGGER.warning("[0.8.2 DIAG] bulletin documents unavailable: %s", err)
             result["bulletin_documents"] = []
 
         _LOGGER.warning(
-            "[0.8.1 DIAG] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d bulletin=%d",
+            "[0.8.2 DIAG] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d bulletin=%d",
             len(result.get("students", [])),
             len(result.get("periods", [])),
             type(result.get("grades")).__name__,
