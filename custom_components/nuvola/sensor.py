@@ -21,6 +21,8 @@ async def async_setup_entry(
         NuvolaHomeworkSensor(coordinator, entry),
         NuvolaNotesSensor(coordinator, entry),
         NuvolaBulletinSensor(coordinator, entry),
+        NuvolaBoardsSensor(coordinator, entry),
+        NuvolaCircolariSensor(coordinator, entry),
     ])
 
 
@@ -154,3 +156,59 @@ class NuvolaBulletinSensor(BaseNuvolaSensor, SensorEntity):
             "ultimi_allegati": attachments,
         }
         return attrs
+
+
+class NuvolaBoardsSensor(BaseNuvolaSensor, SensorEntity):
+    """Expose the number and names of available digital bulletin boards."""
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry, "boards", "Bacheche digitali")
+
+    @property
+    def native_value(self):
+        boards = self.coordinator.data.get("bulletin_boards", [])
+        return len(boards) if isinstance(boards, list) else 0
+
+    @property
+    def extra_state_attributes(self):
+        boards = self.coordinator.data.get("bulletin_boards", [])
+        if not isinstance(boards, list):
+            boards = []
+        return {
+            "bacheche": [
+                {"id": board.get("id"), "nome": board.get("nome")}
+                for board in boards
+                if isinstance(board, dict)
+            ]
+        }
+
+
+class NuvolaCircolariSensor(BaseNuvolaSensor, SensorEntity):
+    """Expose the dynamically discovered CIRCOLARI board."""
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry, "circolari", "Circolari")
+
+    @property
+    def native_value(self):
+        board = self.coordinator.data.get("circolari_board")
+        return board.get("id") if isinstance(board, dict) else None
+
+    @property
+    def extra_state_attributes(self):
+        board = self.coordinator.data.get("circolari_board")
+        if not isinstance(board, dict):
+            return {"presente": False}
+        return {
+            "presente": True,
+            "id": board.get("id"),
+            "nome": board.get("nome"),
+            "testo": board.get("testo"),
+            "voci": board.get("voci"),
+            "nascondi_allegati_archiviati": board.get(
+                "nascondiAllegatiDeiDocumentiArchiviati"
+            ),
+            "mostra_testo_solo_pagina_iniziale": board.get(
+                "mostraTestoSoloInPaginaIniziale"
+            ),
+        }
