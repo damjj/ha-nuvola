@@ -191,24 +191,53 @@ class NuvolaCircolariSensor(BaseNuvolaSensor, SensorEntity):
 
     @property
     def native_value(self):
-        board = self.coordinator.data.get("circolari_board")
-        return board.get("id") if isinstance(board, dict) else None
+        documents = self.coordinator.data.get("circolari_documents", [])
+        return len(documents) if isinstance(documents, list) else 0
 
     @property
     def extra_state_attributes(self):
         board = self.coordinator.data.get("circolari_board")
-        if not isinstance(board, dict):
-            return {"presente": False}
-        return {
-            "presente": True,
-            "id": board.get("id"),
-            "nome": board.get("nome"),
-            "testo": board.get("testo"),
-            "voci": board.get("voci"),
-            "nascondi_allegati_archiviati": board.get(
-                "nascondiAllegatiDeiDocumentiArchiviati"
-            ),
-            "mostra_testo_solo_pagina_iniziale": board.get(
-                "mostraTestoSoloInPaginaIniziale"
-            ),
+        documents = self.coordinator.data.get("circolari_documents", [])
+        if not isinstance(documents, list):
+            documents = []
+
+        ordered = sorted(
+            documents,
+            key=lambda item: str(item.get("dataPubblicazione") or ""),
+            reverse=True,
+        )
+        latest = ordered[0] if ordered else {}
+        unread = [
+            item for item in documents
+            if item.get("isRead") is False
+            or item.get("documentoBachecaLetto") is False
+            or (
+                isinstance(item.get("metadata"), dict)
+                and item["metadata"].get("isRead") is False
+            )
+        ]
+
+        attrs = {
+            "presente": isinstance(board, dict),
+            "id": board.get("id") if isinstance(board, dict) else None,
+            "nome": board.get("nome") if isinstance(board, dict) else None,
+            "numero_documenti": len(documents),
+            "non_lette": len(unread),
+            "ultimo_id": latest.get("id"),
+            "ultima_pubblicazione": latest.get("dataPubblicazione"),
+            "ultimo_oggetto": latest.get("oggetto"),
+            "ultimo_letto": latest.get("isRead", latest.get("documentoBachecaLetto")),
+            "ultime_circolari": ordered[:10],
         }
+        if isinstance(board, dict):
+            attrs.update({
+                "testo": board.get("testo"),
+                "voci": board.get("voci"),
+                "nascondi_allegati_archiviati": board.get(
+                    "nascondiAllegatiDeiDocumentiArchiviati"
+                ),
+                "mostra_testo_solo_pagina_iniziale": board.get(
+                    "mostraTestoSoloInPaginaIniziale"
+                ),
+            })
+        return attrs

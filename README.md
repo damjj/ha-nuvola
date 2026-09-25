@@ -35,6 +35,6 @@ Progetto non ufficiale e non affiliato a Madisoft S.r.l.
 
 ## Versione 0.8.4 correttiva + diagnostica
 
-Questa versione è temporanea per diagnosticare il recupero dei dati. Scrive nel log a livello WARNING messaggi con prefisso `[0.8.4 DIAG]`, senza registrare password o token API.
+Questa versione è temporanea per diagnosticare il recupero dei dati. Scrive nel log a livello WARNING messaggi con prefisso `[0.8.5 DIAG]`, senza registrare password o token API.
 
-Dopo il riavvio di Home Assistant, cercare `0.8.4 DIAG` nei registri dell'integrazione `nuvola`.
+Dopo il riavvio di Home Assistant, cercare `0.8.5 DIAG` nei registri dell'integrazione `nuvola`.
