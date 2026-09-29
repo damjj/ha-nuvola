@@ -17,7 +17,8 @@ async def async_setup_entry(
     async_add_entities([
         NuvolaStudentsSensor(coordinator, entry),
         NuvolaGradesSensor(coordinator, entry),
-        NuvolaAbsencesSensor(coordinator, entry)(coordinator, entry),
+        NuvolaAbsencesSensor(coordinator, entry),
+        NuvolaHomeworkSensor(coordinator, entry),
         NuvolaNotesSensor(coordinator, entry),
         NuvolaBulletinSensor(coordinator, entry),
         NuvolaBoardsSensor(coordinator, entry),
@@ -62,26 +63,12 @@ class NuvolaAbsencesSensor(BaseNuvolaSensor, SensorEntity):
         super().__init__(coordinator, entry, "absences", "Assenze")
 
     @property
-
-
     def native_value(self):
-
-
         data = self.coordinator.data.get("absences") or {}
-
-
         if isinstance(data, dict):
-
-
             values = data.get("valori")
-
-
             if isinstance(values, list):
-
-
                 return len(values)
-
-
         return 0
 
     @property
@@ -97,6 +84,8 @@ class NuvolaAbsencesSensor(BaseNuvolaSensor, SensorEntity):
             "conteggio": len(values),
             "opzioni": data.get("opzioni") or [],
         }
+
+
 
 
 class NuvolaNotesSensor(BaseNuvolaSensor, SensorEntity):

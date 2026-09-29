@@ -1,8 +1,6 @@
 ## 0.8.6
-- Corretto conteggio assenze usando `valori` dell'endpoint `/assenze`.
-- Aggiunti i dati delle assenze agli attributi del sensore.
-- Recupero Circolari esteso oltre il limite precedente di 25.
-- Rimosso il recupero Compiti non presente nell'interfaccia Nuvola.
+- Corretto il conteggio delle assenze tramite `valori`.
+- Recupero esteso delle circolari.
 
 # Nuvola Registro Elettronico – Home Assistant
 
