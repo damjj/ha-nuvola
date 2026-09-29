@@ -1,3 +1,9 @@
+## 0.8.6
+- Corretto conteggio assenze usando `valori` dell'endpoint `/assenze`.
+- Aggiunti i dati delle assenze agli attributi del sensore.
+- Recupero Circolari esteso oltre il limite precedente di 25.
+- Rimosso il recupero Compiti non presente nell'interfaccia Nuvola.
+
 # Nuvola Registro Elettronico – Home Assistant
 
 Integrazione custom non ufficiale per Nuvola Registro Elettronico (Madisoft).

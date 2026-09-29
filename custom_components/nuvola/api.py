@@ -572,7 +572,7 @@ class NuvolaAPI:
                 "contextAlunno": student_id,
                 "fields": fields,
                 "metadata": "count",
-                "limit": 25,
+                "limit": 1000,
                 "orderBy[id]": "desc",
                 "enumSerializationMethod": "object",
             },

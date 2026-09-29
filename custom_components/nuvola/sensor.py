@@ -17,8 +17,7 @@ async def async_setup_entry(
     async_add_entities([
         NuvolaStudentsSensor(coordinator, entry),
         NuvolaGradesSensor(coordinator, entry),
-        NuvolaAbsencesSensor(coordinator, entry),
-        NuvolaHomeworkSensor(coordinator, entry),
+        NuvolaAbsencesSensor(coordinator, entry)(coordinator, entry),
         NuvolaNotesSensor(coordinator, entry),
         NuvolaBulletinSensor(coordinator, entry),
         NuvolaBoardsSensor(coordinator, entry),
@@ -63,23 +62,41 @@ class NuvolaAbsencesSensor(BaseNuvolaSensor, SensorEntity):
         super().__init__(coordinator, entry, "absences", "Assenze")
 
     @property
+
+
     def native_value(self):
-        data = self.coordinator.data.get("absences", [])
+
+
+        data = self.coordinator.data.get("absences") or {}
+
+
         if isinstance(data, dict):
-            for key in ("assenze", "data"):
-                if isinstance(data.get(key), list):
-                    return len(data[key])
-        return len(data) if isinstance(data, list) else 0
 
 
-class NuvolaHomeworkSensor(BaseNuvolaSensor, SensorEntity):
-    def __init__(self, coordinator, entry):
-        super().__init__(coordinator, entry, "homework", "Compiti")
+            values = data.get("valori")
+
+
+            if isinstance(values, list):
+
+
+                return len(values)
+
+
+        return 0
 
     @property
-    def native_value(self):
-        data = self.coordinator.data.get("homework", [])
-        return len(data) if isinstance(data, list) else 0
+    def extra_state_attributes(self):
+        data = self.coordinator.data.get("absences") or {}
+        if not isinstance(data, dict):
+            return {}
+        values = data.get("valori")
+        if not isinstance(values, list):
+            values = []
+        return {
+            "assenze": values,
+            "conteggio": len(values),
+            "opzioni": data.get("opzioni") or [],
+        }
 
 
 class NuvolaNotesSensor(BaseNuvolaSensor, SensorEntity):
