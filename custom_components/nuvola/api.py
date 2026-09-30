@@ -204,7 +204,7 @@ class NuvolaAPI:
             login_body = await self._text(r, 20000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.6 DIAG] Nuvola OIDC Keycloak login page: HTTP %s final_url=%s type=%s title=%s diagnostics=%s",
+                "[0.8.7 DIAG] Nuvola OIDC Keycloak login page: HTTP %s final_url=%s type=%s title=%s diagnostics=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -301,7 +301,7 @@ class NuvolaAPI:
             has_full_action = {"session_code", "execution", "client_id", "tab_id"}.issubset(set(action_query_keys))
 
             _LOGGER.warning(
-                "[0.8.6 DIAG] Nuvola OIDC Keycloak form: action=%s input_names=%s username_field=%s password_field_present=%s parser_form=%s candidates=%d page_has_session_code=%s",
+                "[0.8.7 DIAG] Nuvola OIDC Keycloak form: action=%s input_names=%s username_field=%s password_field_present=%s parser_form=%s candidates=%d page_has_session_code=%s",
                 self._safe_url(action_url),
                 input_names,
                 username_name,
@@ -311,7 +311,7 @@ class NuvolaAPI:
                 page_has_session_code if not form_action else False,
             )
             _LOGGER.warning(
-                "[0.8.6 DIAG] Nuvola OIDC Keycloak action query keys: %s full_session_action=%s",
+                "[0.8.7 DIAG] Nuvola OIDC Keycloak action query keys: %s full_session_action=%s",
                 action_query_keys,
                 has_full_action,
             )
@@ -336,7 +336,7 @@ class NuvolaAPI:
             post_body = await self._text(r, 8000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.6 DIAG] Nuvola OIDC credential submit: HTTP %s final_url=%s type=%s title=%s cookies=%s",
+                "[0.8.7 DIAG] Nuvola OIDC credential submit: HTTP %s final_url=%s type=%s title=%s cookies=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -375,7 +375,7 @@ class NuvolaAPI:
             area_body = await self._text(r, 6000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.6 DIAG] Nuvola OIDC /area-tutore: HTTP %s final_url=%s type=%s title=%s cookies=%s",
+                "[0.8.7 DIAG] Nuvola OIDC /area-tutore: HTTP %s final_url=%s type=%s title=%s cookies=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -399,7 +399,7 @@ class NuvolaAPI:
             body = await self._text(r, 8000)
             final_url = str(r.url)
             _LOGGER.warning(
-                "[0.8.6 DIAG] Nuvola OIDC login-from-web: HTTP %s final_url=%s type=%s title=%s",
+                "[0.8.7 DIAG] Nuvola OIDC login-from-web: HTTP %s final_url=%s type=%s title=%s",
                 r.status,
                 self._safe_url(final_url),
                 r.headers.get("Content-Type"),
@@ -479,7 +479,7 @@ class NuvolaAPI:
             ) as r:
                 body = await self._text(r, 12000)
                 _LOGGER.warning(
-                    "[0.8.6 DIAG] API request: path=%s attempt=%d HTTP=%s content_type=%s body_preview=%r",
+                    "[0.8.7 DIAG] API request: path=%s attempt=%d HTTP=%s content_type=%s body_preview=%r",
                     path, attempt + 1, r.status, r.headers.get("Content-Type"), body[:500],
                 )
 
@@ -502,7 +502,7 @@ class NuvolaAPI:
                         continue
 
                     _LOGGER.error(
-                        "[0.8.6 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
+                        "[0.8.7 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
                         path, r.status, body[:1500],
                     )
                     raise NuvolaAuthError(
@@ -511,7 +511,7 @@ class NuvolaAPI:
 
                 if r.status >= 400:
                     _LOGGER.error(
-                        "[0.8.6 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
+                        "[0.8.7 DIAG] Nuvola API failed after token handling: path=%s HTTP=%s body=%r",
                         path, r.status, body[:1500],
                     )
                     raise NuvolaAuthError(f"API Nuvola {path} HTTP {r.status}")
@@ -524,7 +524,7 @@ class NuvolaAPI:
                         shape = f"dict(keys={sorted(str(k) for k in data.keys())[:30]})"
                     else:
                         shape = type(data).__name__
-                    _LOGGER.warning("[0.8.6 DIAG] API JSON parsed: path=%s shape=%s", path, shape)
+                    _LOGGER.warning("[0.8.7 DIAG] API JSON parsed: path=%s shape=%s", path, shape)
                     return data
                 except json.JSONDecodeError as err:
                     raise NuvolaAuthError(
@@ -549,7 +549,7 @@ class NuvolaAPI:
             ("valori", "bacheche", "bachecheDigitali", "data", "items"),
         )
         _LOGGER.warning(
-            "[0.8.6 DIAG] digital boards: extracted %d records first=%s",
+            "[0.8.7 DIAG] digital boards: extracted %d records first=%s",
             len(values),
             values[0] if values and isinstance(values[0], dict) else None,
         )
@@ -561,13 +561,10 @@ class NuvolaAPI:
         This mirrors the current Nuvola web UI request observed for
         /area-tutore/bacheche/{board_id}.
         """
-        # Include the attachment metadata exposed by the bulletin document API.
-        # This is intentionally metadata-only: files are downloaded on demand
-        # through the file-preview endpoint and are not stored by Home Assistant.
         fields = (
             "id,adesioneRichiesta,dataScadenzaAdesione,metadata{isRead},"
             "oggetto,nomeVoceTitolario,dataPubblicazione,dataArchiviazione,note,"
-            "numeroRegistro,dataNumeroRegistro,allegati"
+            "numeroRegistro,dataNumeroRegistro"
         )
         data = await self._json(
             f"/api-studente/v1/bacheche-digitali/{board_id}/documenti",
@@ -585,28 +582,27 @@ class NuvolaAPI:
             ("valori", "data", "documenti", "documents", "items"),
         )
         response_count = data.get("count") if isinstance(data, dict) else None
+        attachment_count = sum(
+            len(item.get("allegati") or [])
+            for item in values
+            if isinstance(item, dict) and isinstance(item.get("allegati"), list)
+        )
+        _LOGGER.warning(
+            "[0.8.7 DIAG] board documents: board_id=%s extracted=%d api_count=%s attachments=%d first_keys=%s",
+            board_id,
+            len(values),
+            response_count,
+            attachment_count,
+            sorted(values[0].keys()) if values and isinstance(values[0], dict) else [],
+        )
         if isinstance(response_count, int) and response_count > len(values):
             _LOGGER.warning(
-                "Nuvola CIRCOLARI: API reports %d documents but only %d were extracted (board_id=%s)",
-                response_count, len(values), board_id,
+                "[0.8.7 DIAG] CIRCOLARI: API reports %d documents but only %d were extracted",
+                response_count, len(values),
             )
-
         if values and isinstance(values[0], dict) and "allegati" not in values[0]:
             _LOGGER.warning(
-                "Nuvola CIRCOLARI: response does not contain 'allegati' in document id=%s; "
-                "the fields parameter may no longer expose attachment metadata",
-                values[0].get("id"),
-            )
-        else:
-            attachment_count = sum(
-                len(item.get("allegati") or [])
-                for item in values
-                if isinstance(item, dict) and isinstance(item.get("allegati"), list)
-            )
-            _LOGGER.debug(
-                "Nuvola CIRCOLARI: board_id=%s documents=%d attachments=%d first_keys=%s",
-                board_id, len(values), attachment_count,
-                sorted(values[0].keys()) if values and isinstance(values[0], dict) else [],
+                "[0.8.7 DIAG] CIRCOLARI: allegati not present in response; this endpoint does not expose attachment metadata in this field selection"
             )
         return values
 
@@ -637,7 +633,7 @@ class NuvolaAPI:
             ("valori", "alunni", "students", "data", "items"),
         )
         _LOGGER.warning(
-            "[0.8.6 DIAG] students: extracted %d records from response",
+            "[0.8.7 DIAG] students: extracted %d records from response",
             len(values),
         )
         return values
@@ -656,7 +652,7 @@ class NuvolaAPI:
             ("valori", "frazioni_temporali", "periodi", "data", "items"),
         )
         _LOGGER.warning(
-            "[0.8.6 DIAG] periods: extracted %d records",
+            "[0.8.7 DIAG] periods: extracted %d records",
             len(values),
         )
         return values
@@ -683,10 +679,10 @@ class NuvolaAPI:
         )
 
     async def fetch_all(self):
-        _LOGGER.warning("[0.8.6 DIAG] fetch_all: START")
+        _LOGGER.warning("[0.8.7 DIAG] fetch_all: START")
         students = await self.students()
         _LOGGER.warning(
-            "[0.8.6 DIAG] fetch_all: students result count=%d first_keys=%s",
+            "[0.8.7 DIAG] fetch_all: students result count=%d first_keys=%s",
             len(students) if isinstance(students, list) else -1,
             sorted(students[0].keys()) if students and isinstance(students[0], dict) else [],
         )
@@ -705,12 +701,12 @@ class NuvolaAPI:
         }
 
         if not students:
-            _LOGGER.error("[0.8.6 DIAG] fetch_all: ZERO STUDENTS -> all sensors will remain 0")
+            _LOGGER.error("[0.8.7 DIAG] fetch_all: ZERO STUDENTS -> all sensors will remain 0")
             return result
 
         sid = students[0].get("id") or students[0].get("id_alunno")
         if sid is None:
-            _LOGGER.error("[0.8.6 DIAG] fetch_all: student found but no id/id_alunno field -> all child API calls skipped")
+            _LOGGER.error("[0.8.7 DIAG] fetch_all: student found but no id/id_alunno field -> all child API calls skipped")
             return result
 
         result["student"] = students[0]
@@ -719,7 +715,7 @@ class NuvolaAPI:
             periods = await self.periods(sid)
             result["periods"] = periods if isinstance(periods, list) else []
         except Exception as err:
-            _LOGGER.warning("[0.8.6 DIAG] periods unavailable: %s", err)
+            _LOGGER.warning("[0.8.7 DIAG] periods unavailable: %s", err)
 
         if result["periods"]:
             first = result["periods"][-1]
@@ -732,22 +728,22 @@ class NuvolaAPI:
                 try:
                     result["grades"] = await self.grades(sid, pid)
                 except Exception as err:
-                    _LOGGER.warning("[0.8.6 DIAG] grades unavailable: %s", err)
+                    _LOGGER.warning("[0.8.7 DIAG] grades unavailable: %s", err)
 
         try:
             result["absences"] = await self.absences(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.6 DIAG] absences unavailable: %s", err)
+            _LOGGER.warning("[0.8.7 DIAG] absences unavailable: %s", err)
 
         try:
             result["notes"] = await self.notes(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.6 DIAG] notes unavailable: %s", err)
+            _LOGGER.warning("[0.8.7 DIAG] notes unavailable: %s", err)
 
         try:
             result["homework"] = await self.homework(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.6 DIAG] homework unavailable: %s", err)
+            _LOGGER.debug("[0.8.7 DIAG] homework unavailable (expected: endpoint not exposed): %s", err)
 
         try:
             boards = await self.digital_boards(sid)
@@ -770,19 +766,19 @@ class NuvolaAPI:
                 result["bulletin_documents"] = documents
                 result["circolari_documents"] = documents
                 _LOGGER.warning(
-                    "[0.8.6 DIAG] CIRCOLARI: board_id=%s documents=%d",
+                    "[0.8.7 DIAG] CIRCOLARI: board_id=%s documents=%d",
                     board_id,
                     len(documents),
                 )
             else:
-                _LOGGER.warning("[0.8.6 DIAG] CIRCOLARI board not found")
+                _LOGGER.warning("[0.8.7 DIAG] CIRCOLARI board not found")
         except Exception as err:
-            _LOGGER.warning("[0.8.6 DIAG] bulletin area unavailable: %s", err)
+            _LOGGER.warning("[0.8.7 DIAG] bulletin area unavailable: %s", err)
             result["bulletin_documents"] = []
             result["circolari_documents"] = []
 
         _LOGGER.warning(
-            "[0.8.6 DIAG] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d boards=%d bulletin=%d circolari=%s",
+            "[0.8.7 DIAG] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d boards=%d bulletin=%d circolari=%s",
             len(result.get("students", [])),
             len(result.get("periods", [])),
             type(result.get("grades")).__name__,

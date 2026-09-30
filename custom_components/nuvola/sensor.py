@@ -66,10 +66,24 @@ class NuvolaAbsencesSensor(BaseNuvolaSensor, SensorEntity):
     def native_value(self):
         data = self.coordinator.data.get("absences", [])
         if isinstance(data, dict):
+            values = data.get("valori")
+            if isinstance(values, list):
+                return len(values)
             for key in ("assenze", "data"):
                 if isinstance(data.get(key), list):
                     return len(data[key])
         return len(data) if isinstance(data, list) else 0
+
+    @property
+    def extra_state_attributes(self):
+        data = self.coordinator.data.get("absences", {})
+        if not isinstance(data, dict):
+            return {}
+        values = data.get("valori")
+        return {
+            "assenze": values if isinstance(values, list) else [],
+            "opzioni": data.get("opzioni") or [],
+        }
 
 
 class NuvolaHomeworkSensor(BaseNuvolaSensor, SensorEntity):
@@ -217,39 +231,6 @@ class NuvolaCircolariSensor(BaseNuvolaSensor, SensorEntity):
             )
         ]
 
-        student = self.coordinator.data.get("student") or {}
-        student_id = student.get("id") or student.get("id_alunno")
-        circulars = []
-        for item in ordered:
-            if not isinstance(item, dict):
-                continue
-            attachments = []
-            for attachment in item.get("allegati") or []:
-                if not isinstance(attachment, dict):
-                    continue
-                attachment_id = attachment.get("id")
-                attachment_item = {
-                    "id": attachment_id,
-                    "nome": attachment.get("nome"),
-                    "mime_type": attachment.get("mimeType"),
-                }
-                if attachment_id and student_id is not None:
-                    attachment_item["preview_url"] = (
-                        f"https://nuvola.madisoft.it/api-studente/v1/alunno/{student_id}/"
-                        f"file-preview/{attachment_id}?contextAlunno={student_id}"
-                    )
-                attachments.append(attachment_item)
-            circulars.append({
-                "id": item.get("id"),
-                "oggetto": item.get("oggetto"),
-                "data_pubblicazione": item.get("dataPubblicazione"),
-                "numero_registro": item.get("numeroRegistro"),
-                "data_numero_registro": item.get("dataNumeroRegistro"),
-                "letto": item.get("isRead", item.get("documentoBachecaLetto")),
-                "adesione_richiesta": item.get("adesioneRichiesta"),
-                "allegati": attachments,
-            })
-
         attrs = {
             "presente": isinstance(board, dict),
             "id": board.get("id") if isinstance(board, dict) else None,
@@ -261,7 +242,6 @@ class NuvolaCircolariSensor(BaseNuvolaSensor, SensorEntity):
             "ultimo_oggetto": latest.get("oggetto"),
             "ultimo_letto": latest.get("isRead", latest.get("documentoBachecaLetto")),
             "ultime_circolari": ordered[:10],
-            "circolari": circulars,
         }
         if isinstance(board, dict):
             attrs.update({
