@@ -1,9 +1,3 @@
-## 0.8.6
-- Corretto il sensore Assenze: usa il campo `valori` restituito dall'endpoint `/assenze`.
-- Aggiunti agli attributi i dati delle assenze e le opzioni della risposta.
-- Circolari: limite documenti aumentato da 25 a 1000.
-- Basata direttamente sulla 0.8.5 funzionante, senza rimuovere le entità esistenti.
-
 # Nuvola Registro Elettronico – Home Assistant
 
 Integrazione custom non ufficiale per Nuvola Registro Elettronico (Madisoft).
