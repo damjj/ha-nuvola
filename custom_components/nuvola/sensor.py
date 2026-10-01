@@ -66,10 +66,23 @@ class NuvolaAbsencesSensor(BaseNuvolaSensor, SensorEntity):
     def native_value(self):
         data = self.coordinator.data.get("absences", [])
         if isinstance(data, dict):
-            for key in ("assenze", "data"):
-                if isinstance(data.get(key), list):
-                    return len(data[key])
+            values = data.get("valori")
+            if isinstance(values, list):
+                return len(values)
         return len(data) if isinstance(data, list) else 0
+
+    @property
+    def extra_state_attributes(self):
+        data = self.coordinator.data.get("absences", {})
+        if not isinstance(data, dict):
+            return {}
+        values = data.get("valori")
+        if not isinstance(values, list):
+            values = []
+        return {
+            "assenze": values,
+            "opzioni": data.get("opzioni") or [],
+        }
 
 
 class NuvolaHomeworkSensor(BaseNuvolaSensor, SensorEntity):

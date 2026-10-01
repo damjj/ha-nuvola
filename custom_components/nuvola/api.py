@@ -561,18 +561,15 @@ class NuvolaAPI:
         This mirrors the current Nuvola web UI request observed for
         /area-tutore/bacheche/{board_id}.
         """
-        fields = (
-            "id,adesioneRichiesta,dataScadenzaAdesione,metadata{isRead},"
-            "oggetto,nomeVoceTitolario,dataPubblicazione,dataArchiviazione,note,"
-            "numeroRegistro,dataNumeroRegistro"
-        )
+        # Do not send a `fields` parameter here.  The Nuvola endpoint rejects
+        # `allegati` as a selectable field, but the full document representation
+        # can include it.  This also keeps all document fields returned by Nuvola.
         data = await self._json(
             f"/api-studente/v1/bacheche-digitali/{board_id}/documenti",
             params={
                 "contextAlunno": student_id,
-                "fields": fields,
                 "metadata": "count",
-                "limit": 25,
+                "limit": 1000,
                 "orderBy[id]": "desc",
                 "enumSerializationMethod": "object",
             },
@@ -581,12 +578,26 @@ class NuvolaAPI:
             data,
             ("valori", "data", "documenti", "documents", "items"),
         )
+        api_count = data.get("count") if isinstance(data, dict) else None
+        attachments_total = sum(
+            len(item.get("allegati") or [])
+            for item in values
+            if isinstance(item, dict) and isinstance(item.get("allegati"), list)
+        )
         _LOGGER.warning(
-            "[0.8.5 DIAG] board documents: board_id=%s extracted=%d first_keys=%s",
-            board_id,
-            len(values),
+            "[0.8.9] CIRCOLARI: board_id=%s api_count=%s extracted=%d attachments_total=%d first_keys=%s",
+            board_id, api_count, len(values), attachments_total,
             sorted(values[0].keys()) if values and isinstance(values[0], dict) else [],
         )
+        if api_count is not None and len(values) < int(api_count):
+            _LOGGER.warning(
+                "[0.8.9] CIRCOLARI: Nuvola reports count=%s but returned %s documents",
+                api_count, len(values),
+            )
+        if values and any(isinstance(item, dict) and "allegati" in item for item in values):
+            first_with = next((item for item in values if isinstance(item, dict) and item.get("allegati")), None)
+            if first_with:
+                _LOGGER.warning("[0.8.9] CIRCOLARI: first document with attachments id=%s attachments=%s", first_with.get("id"), first_with.get("allegati"))
         return values
 
     @staticmethod
@@ -662,7 +673,7 @@ class NuvolaAPI:
         )
 
     async def fetch_all(self):
-        _LOGGER.warning("[0.8.5 DIAG] fetch_all: START")
+        _LOGGER.warning("[0.8.9] fetch_all: START")
         students = await self.students()
         _LOGGER.warning(
             "[0.8.5 DIAG] fetch_all: students result count=%d first_keys=%s",
@@ -726,7 +737,7 @@ class NuvolaAPI:
         try:
             result["homework"] = await self.homework(sid)
         except Exception as err:
-            _LOGGER.warning("[0.8.5 DIAG] homework unavailable: %s", err)
+            _LOGGER.debug("[0.8.9] homework unavailable: %s", err)
 
         try:
             boards = await self.digital_boards(sid)
@@ -761,7 +772,7 @@ class NuvolaAPI:
             result["circolari_documents"] = []
 
         _LOGGER.warning(
-            "[0.8.5 DIAG] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d boards=%d bulletin=%d circolari=%s",
+            "[0.8.9] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d boards=%d bulletin=%d circolari=%s",
             len(result.get("students", [])),
             len(result.get("periods", [])),
             type(result.get("grades")).__name__,
