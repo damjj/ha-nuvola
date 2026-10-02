@@ -556,49 +556,55 @@ class NuvolaAPI:
         return values
 
     async def bulletin_documents(self, student_id, board_id):
-        """Return documents for one digital bulletin board.
-
-        This mirrors the current Nuvola web UI request observed for
-        /area-tutore/bacheche/{board_id}.
-        """
-        # Do not send a `fields` parameter here.  The Nuvola endpoint rejects
-        # `allegati` as a selectable field, but the full document representation
-        # can include it.  This also keeps all document fields returned by Nuvola.
-        data = await self._json(
-            f"/api-studente/v1/bacheche-digitali/{board_id}/documenti",
-            params={
-                "contextAlunno": student_id,
-                "metadata": "count",
-                "limit": 1000,
-                "orderBy[id]": "desc",
-                "enumSerializationMethod": "object",
+        """Return bulletin-board documents, with fallbacks for Nuvola response variants."""
+        path = f"/api-studente/v1/bacheche-digitali/{board_id}/documenti"
+        fields = (
+            "id,adesioneRichiesta,dataScadenzaAdesione,metadata{isRead},"
+            "oggetto,nomeVoceTitolario,dataPubblicazione,dataArchiviazione,note,"
+            "numeroRegistro,dataNumeroRegistro"
+        )
+        attempts = [
+            {
+                "contextAlunno": student_id, "fields": fields, "metadata": "count",
+                "limit": 25, "orderBy[id]": "desc", "enumSerializationMethod": "object",
             },
-        )
-        values = self._extract_list(
-            data,
-            ("valori", "data", "documenti", "documents", "items"),
-        )
-        api_count = data.get("count") if isinstance(data, dict) else None
-        attachments_total = sum(
-            len(item.get("allegati") or [])
-            for item in values
-            if isinstance(item, dict) and isinstance(item.get("allegati"), list)
-        )
-        _LOGGER.warning(
-            "[0.8.9] CIRCOLARI: board_id=%s api_count=%s extracted=%d attachments_total=%d first_keys=%s",
-            board_id, api_count, len(values), attachments_total,
-            sorted(values[0].keys()) if values and isinstance(values[0], dict) else [],
-        )
-        if api_count is not None and len(values) < int(api_count):
+            {
+                "contextAlunno": student_id, "fields": fields, "limit": 1000,
+                "orderBy[id]": "desc", "enumSerializationMethod": "object",
+            },
+            {
+                "contextAlunno": student_id, "limit": 1000,
+                "orderBy[id]": "desc", "enumSerializationMethod": "object",
+            },
+            {
+                "contextAlunno": student_id, "limit": 1000,
+                "orderBy[id]": "desc",
+            },
+        ]
+        last_data = {}
+        for n, params in enumerate(attempts, 1):
+            data = await self._json(path, params=params)
+            last_data = data
+            values = self._extract_list(data, ("valori", "data", "documenti", "documents", "items"))
+            count = data.get("count") if isinstance(data, dict) else None
             _LOGGER.warning(
-                "[0.8.9] CIRCOLARI: Nuvola reports count=%s but returned %s documents",
-                api_count, len(values),
+                "[0.9.1] CIRCOLARI attempt=%d count=%s extracted=%d keys=%s",
+                n, count, len(values), sorted(data.keys()) if isinstance(data, dict) else [],
             )
-        if values and any(isinstance(item, dict) and "allegati" in item for item in values):
-            first_with = next((item for item in values if isinstance(item, dict) and item.get("allegati")), None)
-            if first_with:
-                _LOGGER.warning("[0.8.9] CIRCOLARI: first document with attachments id=%s attachments=%s", first_with.get("id"), first_with.get("allegati"))
-        return values
+            if values:
+                attachments_total = sum(len(v.get("allegati") or []) for v in values if isinstance(v, dict))
+                _LOGGER.warning(
+                    "[0.9.1] CIRCOLARI OK: board_id=%s documents=%d attachments=%d first_keys=%s",
+                    board_id, len(values), attachments_total,
+                    sorted(values[0].keys()) if isinstance(values[0], dict) else [],
+                )
+                return values
+        count = last_data.get("count") if isinstance(last_data, dict) else None
+        _LOGGER.error(
+            "[0.9.1] CIRCOLARI: Nuvola returned count=%s but no document list after %d request variants",
+            count, len(attempts),
+        )
+        return []
 
     @staticmethod
     def attachment_preview_url(student_id, attachment_id):
@@ -673,10 +679,10 @@ class NuvolaAPI:
         )
 
     async def fetch_all(self):
-        _LOGGER.warning("[0.8.9] fetch_all: START")
+        _LOGGER.warning("[0.9.1] fetch_all: START")
         students = await self.students()
         _LOGGER.warning(
-            "[0.8.5 DIAG] fetch_all: students result count=%d first_keys=%s",
+            "[0.9.1] fetch_all: students result count=%d first_keys=%s",
             len(students) if isinstance(students, list) else -1,
             sorted(students[0].keys()) if students and isinstance(students[0], dict) else [],
         )
@@ -695,12 +701,12 @@ class NuvolaAPI:
         }
 
         if not students:
-            _LOGGER.error("[0.8.5 DIAG] fetch_all: ZERO STUDENTS -> all sensors will remain 0")
+            _LOGGER.error("[0.9.1] fetch_all: ZERO STUDENTS -> all sensors will remain 0")
             return result
 
         sid = students[0].get("id") or students[0].get("id_alunno")
         if sid is None:
-            _LOGGER.error("[0.8.5 DIAG] fetch_all: student found but no id/id_alunno field -> all child API calls skipped")
+            _LOGGER.error("[0.9.1] fetch_all: student found but no id/id_alunno field -> all child API calls skipped")
             return result
 
         result["student"] = students[0]
@@ -737,7 +743,7 @@ class NuvolaAPI:
         try:
             result["homework"] = await self.homework(sid)
         except Exception as err:
-            _LOGGER.debug("[0.8.9] homework unavailable: %s", err)
+            _LOGGER.debug("[0.9.1] homework unavailable: %s", err)
 
         try:
             boards = await self.digital_boards(sid)
@@ -772,7 +778,7 @@ class NuvolaAPI:
             result["circolari_documents"] = []
 
         _LOGGER.warning(
-            "[0.8.9] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d boards=%d bulletin=%d circolari=%s",
+            "[0.9.1] fetch_all: END students=%d periods=%d grades_type=%s absences_type=%s notes_type=%s homework=%d boards=%d bulletin=%d circolari=%s",
             len(result.get("students", [])),
             len(result.get("periods", [])),
             type(result.get("grades")).__name__,
